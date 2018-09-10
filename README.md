@@ -1,4 +1,4 @@
-# Ayte :: Utility :: Functions
+# Ayte :: Utility :: Function
 
 Simple collection of commonly reused functions for internal needs.
 

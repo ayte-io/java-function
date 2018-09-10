@@ -24,6 +24,10 @@ public class Predicates {
         return ANY_FALSE;
     }
 
+    public static <T> Predicate<T> anyValue(boolean value) {
+        return new AnyValue<>(value);
+    }
+
     public static <T> Predicate<T> equalTo(Object reference) {
         return new EqualTo<>(reference);
     }
@@ -152,6 +156,16 @@ public class Predicates {
         @Override
         public boolean test(T subject) {
             return false;
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class AnyValue<T> implements Predicate<T> {
+        private final boolean value;
+
+        @Override
+        public boolean test(T t) {
+            return value;
         }
     }
 
