@@ -6,7 +6,7 @@ to eliminate common boilerplate such as:
 ```
 // Functions.orNull()
 Stream<Optional<T>>.map(optional -> optional.orElse(null))
-// Functions.toList(mapper)
+// Functions.toSet(mapper)
 Stream<Collection<I>>.map(collection -> collection.map(mapper).collect(Collectors.toSet()))
 // Functions.allMatch(predicate)
 Stream<Collection<I>>.filter(collection -> collection.stream().allMatch(predicate))
