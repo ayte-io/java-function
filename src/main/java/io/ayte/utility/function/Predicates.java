@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+@SuppressWarnings("squid:S1452")
 public class Predicates {
     public static final AnyTrue ANY_TRUE = new AnyTrue();
     public static final AnyFalse ANY_FALSE = new AnyFalse();
@@ -150,6 +151,18 @@ public class Predicates {
         return new Mapping<>(mapper, predicate);
     }
 
+    public static <I> Predicate<? extends Collection<I>> allMatch(Predicate<I> predicate) {
+        return new AllMatch<>(predicate);
+    }
+
+    public static <I> Predicate<? extends Collection<I>> anyMatch(Predicate<I> predicate) {
+        return new AnyMatch<>(predicate);
+    }
+
+    public static <I> Predicate<? extends Collection<I>> noneMatch(Predicate<I> predicate) {
+        return new NoneMatch<>(predicate);
+    }
+
     private static class AnyTrue<T> implements Predicate<T> {
         @Override
         public boolean test(T subject) {
@@ -257,6 +270,36 @@ public class Predicates {
         @Override
         public boolean test(T subject) {
             return predicate.test(mapper.apply(subject));
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class AllMatch<I, C extends Collection<I>> implements Predicate<C> {
+        private final Predicate<I> predicate;
+
+        @Override
+        public boolean test(C subject) {
+            return subject.stream().allMatch(predicate);
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class AnyMatch<I, C extends Collection<I>> implements Predicate<C> {
+        private final Predicate<I> predicate;
+
+        @Override
+        public boolean test(C subject) {
+            return subject.stream().anyMatch(predicate);
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class NoneMatch<I, C extends Collection<I>> implements Predicate<C> {
+        private final Predicate<I> predicate;
+
+        @Override
+        public boolean test(C subject) {
+            return subject.stream().noneMatch(predicate);
         }
     }
 }

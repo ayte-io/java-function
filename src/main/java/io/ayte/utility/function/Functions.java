@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 public class Functions {
     public static final WithLeft WITH_LEFT = new WithLeft();
     public static final WithRight WITH_RIGHT = new WithRight();
+    public static final OrElse OR_NULL = new OrElse<>(null);
 
     private Functions() {}
 
@@ -41,6 +43,15 @@ public class Functions {
 
     public static <I, O> Function<Collection<? extends I>, O> collect(Collector<I, ?, O> collector) {
         return new StreamCollector<>(collector);
+    }
+
+    public static <I> Function<Optional<I>, I> orElse(I value) {
+        return new OrElse<>(value);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <I> Function<Optional<I>, I> orNull() {
+        return OR_NULL;
     }
 
     private static class WithLeft<T> implements BinaryOperator<T> {
@@ -75,6 +86,16 @@ public class Functions {
         @Override
         public O apply(Collection<? extends I> subject) {
             return subject.stream().collect(collector);
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class OrElse<I> implements Function<Optional<I>, I> {
+        private final I value;
+
+        @Override
+        public I apply(Optional<I> subject) {
+            return subject.orElse(value);
         }
     }
 }
