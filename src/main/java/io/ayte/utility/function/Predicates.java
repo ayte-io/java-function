@@ -24,8 +24,13 @@ public class Predicates {
         return ANY_FALSE;
     }
 
-    public static <T> Predicate<T> anyValue(boolean value) {
-        return new AnyValue<>(value);
+    /**
+     * This method exists because ternary operations like
+     * {@code condition ? Predicates.anyTrue() : Predicates.anyFalse()}
+     * are expected.
+     */
+    public static <T> Predicate<T> anyFixed(boolean value) {
+        return value ? anyTrue() : anyFalse();
     }
 
     public static <T> Predicate<T> equalTo(Object reference) {
@@ -156,16 +161,6 @@ public class Predicates {
         @Override
         public boolean test(T subject) {
             return false;
-        }
-    }
-
-    @RequiredArgsConstructor
-    private static class AnyValue<T> implements Predicate<T> {
-        private final boolean value;
-
-        @Override
-        public boolean test(T t) {
-            return value;
         }
     }
 
