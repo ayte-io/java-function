@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -28,9 +29,9 @@ public class Predicates {
     /**
      * This method exists because ternary operations like
      * {@code condition ? Predicates.anyTrue() : Predicates.anyFalse()}
-     * are expected.
+     * are expected and we're trying to reduce boilerplate here.
      */
-    public static <T> Predicate<T> anyFixed(boolean value) {
+    public static <T> Predicate<T> constant(boolean value) {
         return value ? anyTrue() : anyFalse();
     }
 
@@ -44,6 +45,14 @@ public class Predicates {
 
     public static <T> Predicate<T> isElementOf(Collection<? super T> pool) {
         return new IsElementOf<>(pool);
+    }
+
+    public static <T> Predicate<T> isKeyOf(Map<? super T, ?> pool) {
+        return new IsKeyOf<>(pool);
+    }
+
+    public static <T> Predicate<T> isValueOf(Map<?, ? super T> pool) {
+        return new IsValueOf<>(pool);
     }
 
     public static <T> Predicate<T> isGreaterThan(T reference, Comparator<T> comparator) {
@@ -151,16 +160,32 @@ public class Predicates {
         return new Mapping<>(mapper, predicate);
     }
 
-    public static <I> Predicate<? extends Collection<I>> allMatch(Predicate<I> predicate) {
+    public static <T, S> Predicate<T> extracting(Function<T, S> extractor, Predicate<S> predicate) {
+        return mapping(extractor, predicate);
+    }
+
+    public static <I> Predicate<? extends Collection<? extends I>> allMatch(Predicate<I> predicate) {
         return new AllMatch<>(predicate);
     }
 
-    public static <I> Predicate<? extends Collection<I>> anyMatch(Predicate<I> predicate) {
+    public static <I> Predicate<? extends Collection<? extends I>> anyMatch(Predicate<I> predicate) {
         return new AnyMatch<>(predicate);
     }
 
-    public static <I> Predicate<? extends Collection<I>> noneMatch(Predicate<I> predicate) {
+    public static <I> Predicate<? extends Collection<? extends I>> noneMatch(Predicate<I> predicate) {
         return new NoneMatch<>(predicate);
+    }
+
+    public static <I> Predicate<? extends Collection<? extends I>> allEqual(Object reference) {
+        return allMatch(equalTo(reference));
+    }
+
+    public static <I> Predicate<? extends Collection<? extends I>> anyEqual(Object reference) {
+        return anyMatch(equalTo(reference));
+    }
+
+    public static <I> Predicate<? extends Collection<? extends I>> noneEqual(Object reference) {
+        return noneMatch(equalTo(reference));
     }
 
     private static class AnyTrue<T> implements Predicate<T> {
@@ -204,6 +229,26 @@ public class Predicates {
         @Override
         public boolean test(T subject) {
             return pool.contains(subject);
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class IsKeyOf<T> implements Predicate<T> {
+        private final Map<? super T, ?> pool;
+
+        @Override
+        public boolean test(T subject) {
+            return pool.containsKey(subject);
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class IsValueOf<T> implements Predicate<T> {
+        private final Map<?, ? super T> pool;
+
+        @Override
+        public boolean test(T subject) {
+            return pool.containsValue(subject);
         }
     }
 

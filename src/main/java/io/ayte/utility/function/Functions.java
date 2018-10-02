@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,10 @@ public class Functions {
         return OR_NULL;
     }
 
+    public static <I> Function<Optional<I>, I> orElseGet(Supplier<I> supplier) {
+        return new OrElseGet<>(supplier);
+    }
+
     private static class WithLeft<T> implements BinaryOperator<T> {
         @Override
         public T apply(T value, T any) {
@@ -96,6 +101,16 @@ public class Functions {
         @Override
         public I apply(Optional<I> subject) {
             return subject.orElse(value);
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class OrElseGet<I> implements Function<Optional<I>, I> {
+        private final Supplier<I> supplier;
+
+        @Override
+        public I apply(Optional<I> subject) {
+            return subject.orElseGet(supplier);
         }
     }
 }
