@@ -28,7 +28,7 @@ public class Sets {
     }
 
     /**
-     * Same as {@code Set.of()} in java 9+, added for java 8
+     * Same as {@code Set.copyOf()} in java 9+, added for java 8
      * compatibility.
      */
     public static <T> Set<T> copyOf(Collection<? extends T> subject) {

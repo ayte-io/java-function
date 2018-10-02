@@ -2,6 +2,7 @@ package io.ayte.utility.function;
 
 /**
  * @see Action
+ * @see TriActions
  *
  * @param <T1>
  * @param <T2>
