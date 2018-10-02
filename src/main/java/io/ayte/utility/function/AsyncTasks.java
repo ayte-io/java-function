@@ -3,7 +3,7 @@ package io.ayte.utility.function;
 import lombok.RequiredArgsConstructor;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 
 public class AsyncTasks {
     private AsyncTasks() {}
@@ -11,8 +11,12 @@ public class AsyncTasks {
         return new SyncTaskWrapper(task);
     }
 
-    public static AsyncTask attachExecutor(Task<? extends Exception> task, ExecutorService executor) {
+    public static AsyncTask fromTaskAndExecutor(Task<? extends Exception> task, Executor executor) {
         return new ExecutedSyncTask(task, executor);
+    }
+
+    public static AsyncTask from(Task<? extends Exception> task, Executor executor) {
+        return fromTaskAndExecutor(task, executor);
     }
 
     @RequiredArgsConstructor
@@ -51,12 +55,12 @@ public class AsyncTasks {
     @RequiredArgsConstructor
     private static class ExecutedSyncTask implements AsyncTask {
         private final Task<? extends Exception> task;
-        private final ExecutorService executor;
+        private final Executor executor;
 
         @Override
         public CompletableFuture<Void> execute() {
             CompletableFuture<Void> synchronizer = new CompletableFuture<>();
-            executor.submit(new SyncTaskExecution(task, synchronizer));
+            executor.execute(new SyncTaskExecution(task, synchronizer));
             return synchronizer;
         }
     }
