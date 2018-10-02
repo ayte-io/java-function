@@ -46,13 +46,13 @@ public class Functions {
         return new StreamCollector<>(collector);
     }
 
-    public static <I> Function<Optional<I>, I> orElse(I value) {
-        return new OrElse<>(value);
-    }
-
     @SuppressWarnings("unchecked")
     public static <I> Function<Optional<I>, I> orNull() {
         return OR_NULL;
+    }
+
+    public static <I> Function<Optional<I>, I> orElse(I value) {
+        return new OrElse<>(value);
     }
 
     public static <I> Function<Optional<I>, I> orElseGet(Supplier<I> supplier) {

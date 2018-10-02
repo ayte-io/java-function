@@ -43,48 +43,52 @@ public class Predicates {
         return new EqualToInAnyCase(reference);
     }
 
-    public static <T> Predicate<T> isElementOf(Collection<? super T> pool) {
-        return new IsElementOf<>(pool);
+    public static <T> Predicate<T> elementOf(Collection<? super T> pool) {
+        return new ElementOf<>(pool);
     }
 
-    public static <T> Predicate<T> isKeyOf(Map<? super T, ?> pool) {
-        return new IsKeyOf<>(pool);
+    public static <T> Predicate<T> contains(Collection<? super T> pool) {
+        return elementOf(pool);
     }
 
-    public static <T> Predicate<T> isValueOf(Map<?, ? super T> pool) {
-        return new IsValueOf<>(pool);
+    public static <T> Predicate<T> keyOf(Map<? super T, ?> pool) {
+        return new KeyOf<>(pool);
     }
 
-    public static <T> Predicate<T> isGreaterThan(T reference, Comparator<T> comparator) {
-        return new IsGreaterThan<>(reference, comparator);
+    public static <T> Predicate<T> valueOf(Map<?, ? super T> pool) {
+        return new ValueOf<>(pool);
     }
 
-    public static <T extends Comparable<T>> Predicate<T> isGreaterThan(T reference) {
-        return isGreaterThan(reference, Comparators.intrinsic());
+    public static <T> Predicate<T> greaterThan(T reference, Comparator<T> comparator) {
+        return new GreaterThan<>(reference, comparator);
     }
 
-    public static <T> Predicate<T> isGreaterThanOrEqualTo(T reference, Comparator<T> comparator) {
-        return new IsGreaterThanOrEqualTo<>(reference, comparator);
+    public static <T extends Comparable<T>> Predicate<T> greaterThan(T reference) {
+        return greaterThan(reference, Comparators.intrinsic());
     }
 
-    public static <T extends Comparable<T>> Predicate<T> isGreaterOrEqualThan(T reference) {
-        return isGreaterThanOrEqualTo(reference, Comparators.intrinsic());
+    public static <T> Predicate<T> greaterThanOrEqualTo(T reference, Comparator<T> comparator) {
+        return new GreaterThanOrEqualTo<>(reference, comparator);
     }
 
-    public static <T> Predicate<T> isLessThan(T reference, Comparator<T> comparator) {
-        return new IsLessThan<>(reference, comparator);
+    public static <T extends Comparable<T>> Predicate<T> greaterThanOrEqualTo(T reference) {
+        return greaterThanOrEqualTo(reference, Comparators.intrinsic());
     }
 
-    public static <T extends Comparable<T>> Predicate<T> isLessThan(T reference) {
-        return isLessThan(reference, Comparators.intrinsic());
+    public static <T> Predicate<T> lessThan(T reference, Comparator<T> comparator) {
+        return new LessThan<>(reference, comparator);
     }
 
-    public static <T> Predicate<T> isLessThanOrEqualTo(T reference, Comparator<T> comparator) {
-        return new IsLessThanOrEqualTo<>(reference, comparator);
+    public static <T extends Comparable<T>> Predicate<T> lessThan(T reference) {
+        return lessThan(reference, Comparators.intrinsic());
     }
 
-    public static <T extends Comparable<T>> Predicate<T> isLessThanOrEqualTo(T reference) {
-        return isLessThanOrEqualTo(reference, Comparators.intrinsic());
+    public static <T> Predicate<T> lessThanOrEqualTo(T reference, Comparator<T> comparator) {
+        return new LessThanOrEqualTo<>(reference, comparator);
+    }
+
+    public static <T extends Comparable<T>> Predicate<T> lessThanOrEqualTo(T reference) {
+        return lessThanOrEqualTo(reference, Comparators.intrinsic());
     }
 
     public static <T> Predicate<T> within(
@@ -94,8 +98,8 @@ public class Predicates {
             boolean upperInclusive,
             Comparator<T> comparator
     ) {
-        Predicate<T> l = lowerInclusive ? isGreaterThanOrEqualTo(lower, comparator) : isGreaterThan(lower, comparator);
-        Predicate<T> u = upperInclusive ? isLessThanOrEqualTo(upper, comparator) : isLessThan(upper, comparator);
+        Predicate<T> l = lowerInclusive ? greaterThanOrEqualTo(lower, comparator) : greaterThan(lower, comparator);
+        Predicate<T> u = upperInclusive ? lessThanOrEqualTo(upper, comparator) : lessThan(upper, comparator);
         return new Within<>(l, u);
     }
 
@@ -223,7 +227,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class IsElementOf<T> implements Predicate<T> {
+    private static class ElementOf<T> implements Predicate<T> {
         private final Collection<? super T> pool;
 
         @Override
@@ -233,7 +237,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class IsKeyOf<T> implements Predicate<T> {
+    private static class KeyOf<T> implements Predicate<T> {
         private final Map<? super T, ?> pool;
 
         @Override
@@ -243,7 +247,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class IsValueOf<T> implements Predicate<T> {
+    private static class ValueOf<T> implements Predicate<T> {
         private final Map<?, ? super T> pool;
 
         @Override
@@ -253,7 +257,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class IsGreaterThan<T> implements Predicate<T> {
+    private static class GreaterThan<T> implements Predicate<T> {
         private final T reference;
         private final Comparator<T> comparator;
 
@@ -264,7 +268,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class IsGreaterThanOrEqualTo<T> implements Predicate<T> {
+    private static class GreaterThanOrEqualTo<T> implements Predicate<T> {
         private final T reference;
         private final Comparator<T> comparator;
 
@@ -275,7 +279,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class IsLessThan<T> implements Predicate<T> {
+    private static class LessThan<T> implements Predicate<T> {
         private final T reference;
         private final Comparator<T> comparator;
 
@@ -286,7 +290,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class IsLessThanOrEqualTo<T> implements Predicate<T> {
+    private static class LessThanOrEqualTo<T> implements Predicate<T> {
         private final T reference;
         private final Comparator<T> comparator;
 
