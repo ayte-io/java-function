@@ -48,8 +48,8 @@ public class Tasks {
     }
 
     private static class EmptyTask implements Task<RuntimeException> {
-        @Override
         @SuppressWarnings("squid:S1186")
+        @Override
         public void execute() {}
     }
 }

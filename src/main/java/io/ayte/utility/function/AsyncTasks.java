@@ -1,6 +1,7 @@
 package io.ayte.utility.function;
 
 import lombok.RequiredArgsConstructor;
+import lombok.val;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,12 +9,22 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 
 public class AsyncTasks {
     private AsyncTasks() {}
+
+    // not implementing as from() to emphasize that task will be
+    // executed synchronously
     public static AsyncTask synchronous(Task<? extends Exception> task) {
         return new SynchronousTaskWrapper(task);
+    }
+
+    // not implementing as from() to emphasize that common JVM pool
+    // will be used for execution and there's no magic
+    public static AsyncTask fromTaskAndCommonPool(Task<? extends Exception> task) {
+        return fromTaskAndExecutor(task, ForkJoinPool.commonPool());
     }
 
     public static AsyncTask fromTaskAndExecutor(Task<? extends Exception> task, Executor executor) {
@@ -38,11 +49,14 @@ public class AsyncTasks {
         // and incorporating those if-conditions in this method should
         // not get such performance penalty
         // TODO: statement above is subject for verification using JMH
-        int size = tasks.size();
-        if (size == 0) {
-            return Tasks.empty();
+        switch (tasks.size()) {
+            case 0:
+                return Tasks.empty();
+            case 1:
+                return new UniSynchronousExecution(tasks.iterator().next());
+            default:
+                return new MultiSynchronousExecution(tasks);
         }
-        return size == 1 ? new UniSynchronousExecution(tasks.iterator().next()) : new MultiSynchronousExecution(tasks);
     }
 
     @RequiredArgsConstructor
@@ -61,7 +75,7 @@ public class AsyncTasks {
 
         @Override
         public void execute() throws InterruptedException, ExecutionException {
-            CompletableFuture[] futures = tasks.stream().map(AsyncTask::execute).toArray(CompletableFuture[]::new);
+            val futures = tasks.stream().map(AsyncTask::execute).toArray(CompletableFuture[]::new);
             CompletableFuture.allOf(futures).get();
         }
     }
@@ -111,7 +125,7 @@ public class AsyncTasks {
 
         @Override
         public CompletableFuture<Void> execute() {
-            CompletableFuture<Void> synchronizer = new CompletableFuture<>();
+            val synchronizer = new CompletableFuture<Void>();
             executor.execute(new SynchronousTaskExecution(task, synchronizer));
             return synchronizer;
         }
