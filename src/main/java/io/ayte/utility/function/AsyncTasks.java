@@ -2,6 +2,8 @@ package io.ayte.utility.function;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +25,45 @@ public class AsyncTasks {
     }
 
     public static Task<Exception> toTask(AsyncTask task) {
-        return new SynchronousExecution(task);
+        return new UniSynchronousExecution(task);
+    }
+
+    public static Task<Exception> toTask(AsyncTask... tasks) {
+        return toTask(Arrays.asList(tasks));
+    }
+
+    public static Task<Exception> toTask(Collection<AsyncTask> tasks) {
+        // not using single fits-for-anything class since not sure it
+        // would be optimized by compiler as good as single classes,
+        // and incorporating those if-conditions in this method should
+        // not get such performance penalty
+        // TODO: statement above is subject for verification using JMH
+        int size = tasks.size();
+        if (size == 0) {
+            return Tasks.empty();
+        }
+        return size == 1 ? new UniSynchronousExecution(tasks.iterator().next()) : new MultiSynchronousExecution(tasks);
+    }
+
+    @RequiredArgsConstructor
+    private static class UniSynchronousExecution implements Task<Exception> {
+        private final AsyncTask delegate;
+
+        @Override
+        public void execute() throws InterruptedException, ExecutionException {
+            delegate.execute().get();
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class MultiSynchronousExecution implements Task<Exception> {
+        private final Collection<AsyncTask> tasks;
+
+        @Override
+        public void execute() throws InterruptedException, ExecutionException {
+            CompletableFuture[] futures = tasks.stream().map(AsyncTask::execute).toArray(CompletableFuture[]::new);
+            CompletableFuture.allOf(futures).get();
+        }
     }
 
     /**
@@ -33,23 +73,23 @@ public class AsyncTasks {
      * only once, something that {@link Task} implies as well.
      */
     @RequiredArgsConstructor
-    private static class SyncTaskExecution implements Runnable, Callable<CompletableFuture<Void>> {
+    private static class SynchronousTaskExecution implements Runnable, Callable<CompletableFuture<Void>> {
         private final Task<? extends Exception> task;
         private final CompletableFuture<Void> result;
 
         @Override
         public void run() {
-            call();
-        }
-
-        @Override
-        public CompletableFuture<Void> call() {
             try {
                 task.execute();
                 result.complete(null);
             } catch (Exception e) {
                 result.completeExceptionally(e);
             }
+        }
+
+        @Override
+        public CompletableFuture<Void> call() {
+            run();
             return result;
         }
     }
@@ -60,17 +100,7 @@ public class AsyncTasks {
 
         @Override
         public CompletableFuture<Void> execute() {
-            return new SyncTaskExecution(task, new CompletableFuture<>()).call();
-        }
-    }
-
-    @RequiredArgsConstructor
-    private static class SynchronousExecution implements Task<Exception> {
-        private final AsyncTask task;
-
-        @Override
-        public void execute() throws InterruptedException, ExecutionException {
-            task.execute().get();
+            return new SynchronousTaskExecution(task, new CompletableFuture<>()).call();
         }
     }
 
@@ -82,7 +112,7 @@ public class AsyncTasks {
         @Override
         public CompletableFuture<Void> execute() {
             CompletableFuture<Void> synchronizer = new CompletableFuture<>();
-            executor.execute(new SyncTaskExecution(task, synchronizer));
+            executor.execute(new SynchronousTaskExecution(task, synchronizer));
             return synchronizer;
         }
     }
