@@ -30,6 +30,10 @@ public class Functions {
         return WITH_RIGHT;
     }
 
+    public static <I, M, O> Function<I, O> compose(Function<? super I, M> left, Function<? super M, ? extends O> right) {
+        return new Composition<>(left, right);
+    }
+
     public static <I, M, O> Function<Collection<? extends I>, O> stream(Function<I, M> mapper, Collector<M, ?, O> collector) {
         return new StreamMapper<>(mapper, collector);
     }
@@ -44,6 +48,14 @@ public class Functions {
 
     public static <I, O> Function<Collection<? extends I>, O> collect(Collector<I, ?, O> collector) {
         return new StreamCollector<>(collector);
+    }
+
+    public static <T> Function<Collection<? extends T>, List<T>> toList() {
+        return collect(Collectors.toList());
+    }
+
+    public static <T> Function<Collection<? extends T>, Set<T>> toSet() {
+        return collect(Collectors.toSet());
     }
 
     @SuppressWarnings("unchecked")
@@ -111,6 +123,17 @@ public class Functions {
         @Override
         public I apply(Optional<I> subject) {
             return subject.orElseGet(supplier);
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class Composition<I, M, O> implements Function<I, O> {
+        private final Function<? super I, M> left;
+        private final Function<? super M, ? extends O> right;
+
+        @Override
+        public O apply(I subject) {
+            return right.apply(left.apply(subject));
         }
     }
 }

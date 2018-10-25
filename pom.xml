@@ -7,7 +7,7 @@
     <groupId>io.ayte.utility</groupId>
     <artifactId>function</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <name>Function Library</name>
+    <name>Ayte :: Utility :: Function</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

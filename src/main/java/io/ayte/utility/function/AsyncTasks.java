@@ -13,6 +13,8 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 
 public class AsyncTasks {
+    public static final AsyncTask EMPTY = EmptyTask.INSTANCE;
+
     private AsyncTasks() {}
 
     // not implementing as from() to emphasize that task will be
@@ -93,6 +95,9 @@ public class AsyncTasks {
 
         @Override
         public void run() {
+            if (result.isDone()) {
+                throw new IllegalStateException("This task has already been run");
+            }
             try {
                 task.execute();
                 result.complete(null);
@@ -128,6 +133,15 @@ public class AsyncTasks {
             val synchronizer = new CompletableFuture<Void>();
             executor.execute(new SynchronousTaskExecution(task, synchronizer));
             return synchronizer;
+        }
+    }
+
+    private static class EmptyTask implements AsyncTask {
+        public static final EmptyTask INSTANCE = new EmptyTask();
+
+        @Override
+        public CompletableFuture<Void> execute() {
+            return CompletableFuture.completedFuture(null);
         }
     }
 }

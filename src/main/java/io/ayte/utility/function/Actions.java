@@ -11,6 +11,10 @@ public class Actions {
         return new FunctionAction<>(source);
     }
 
+    public static <T, R> Action<T, R, RuntimeException> from(Function<T, R> source) {
+        return fromFunction(source);
+    }
+
     @RequiredArgsConstructor
     private static class FunctionAction<T, R> implements Action<T, R, RuntimeException> {
         private final Function<T, R> delegate;

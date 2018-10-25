@@ -29,6 +29,22 @@ instead of lambda&dollars&hashcode).
 Subject for fast pace development and breaking changes until 1.0.0. No
 explicit documentation is needed, just check the classes.
 
+## Conventions
+
+- Remove all casts for end user where possible.
+- Expose all factory methods as `fromX`, and, if type erasure and 
+semantics allow that, as overloaded `from`.
+- Interfaces do not hold anything but interface methods, all static
+methods and instances are placed in `Xs` class for `X` interface 
+(e.g. `AsyncTask` and `AsyncTasks`).
+- All functions and operations offered by static methods are expressed
+as separate private classes, so entire composition may be readable from
+debugger or even from `.toString()` call. Such private classes should 
+belong to `Xs` classes, unless they're tightly coupled with interface
+(e.g. are used in default methods).
+- Aim for getting rid of long and unpleasant everyday lambdas.
+- Be reasonable about performance and evade extra calls where possible.
+
 ## Licensing
 
 MIT / Ayte Labs, 2018
