@@ -6,10 +6,12 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
-@SuppressWarnings("squid:S1452")
+@SuppressWarnings({"squid:S1452", "unused"})
 public class Predicates {
     public static final AnyTrue ANY_TRUE = new AnyTrue();
     public static final AnyFalse ANY_FALSE = new AnyFalse();
@@ -33,6 +35,38 @@ public class Predicates {
      */
     public static <T> Predicate<T> constant(boolean value) {
         return value ? anyTrue() : anyFalse();
+    }
+
+    public static <T> Predicate<T> inverse(Predicate<T> predicate) {
+        return new Inversion<>(predicate);
+    }
+
+    public static <T> Predicate<T> not(Predicate<T> predicate) {
+        return inverse(predicate);
+    }
+
+    public static <T> Predicate<T> conjunction(Predicate<? super T> left, Predicate<? super T> right) {
+        return new Conjunction<>(left, right);
+    }
+
+    public static <T> Predicate<T> and(Predicate<? super T> left, Predicate<? super T> right) {
+        return conjunction(left, right);
+    }
+
+    public static <T> Predicate<T> all(Predicate<? super T> left, Predicate<? super T> right) {
+        return conjunction(left, right);
+    }
+
+    public static <T> Predicate<? super T> disjunction(Predicate<? super T> left, Predicate<? super T> right) {
+        return new Disjunction<>(left, right);
+    }
+
+    public static <T> Predicate<? super T> or(Predicate<? super T> left, Predicate<? super T> right) {
+        return disjunction(left, right);
+    }
+
+    public static <T> Predicate<? super T> any(Predicate<? super T> left, Predicate<? super T> right) {
+        return disjunction(left, right);
     }
 
     public static <T> Predicate<T> equalTo(Object reference) {
@@ -192,14 +226,63 @@ public class Predicates {
         return noneMatch(equalTo(reference));
     }
 
-    private static class AnyTrue<T> implements Predicate<T> {
+    private interface ExplicitPredicate<T> extends Predicate<T> {
+        @Override
+        default Predicate<T> and(Predicate<? super T> other) {
+            return new Conjunction<>(this, other);
+        }
+
+        @Override
+        default Predicate<T> or(Predicate<? super T> other) {
+            return new Disjunction<>(this, other);
+        }
+
+        @Override
+        default Predicate<T> negate() {
+            return new Inversion<>(this);
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class Conjunction<T> implements ExplicitPredicate<T> {
+        private final Predicate<? super T> left;
+        private final Predicate<? super T> right;
+
+        @Override
+        public boolean test(T subject) {
+            return left.test(subject) && right.test(subject);
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class Disjunction<T> implements ExplicitPredicate<T> {
+        private final Predicate<? super T> left;
+        private final Predicate<? super T> right;
+
+        @Override
+        public boolean test(T subject) {
+            return left.test(subject) || right.test(subject);
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class Inversion<T> implements ExplicitPredicate<T> {
+        private final Predicate<? super T> delegate;
+
+        @Override
+        public boolean test(T subject) {
+            return !delegate.test(subject);
+        }
+    }
+
+    private static class AnyTrue<T> implements ExplicitPredicate<T> {
         @Override
         public boolean test(T subject) {
             return true;
         }
     }
 
-    private static class AnyFalse<T> implements Predicate<T> {
+    private static class AnyFalse<T> implements ExplicitPredicate<T> {
         @Override
         public boolean test(T subject) {
             return false;
@@ -207,7 +290,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class EqualTo<T> implements Predicate<T> {
+    private static class EqualTo<T> implements ExplicitPredicate<T> {
         private final Object reference;
 
         @Override
@@ -217,7 +300,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class EqualToInAnyCase implements Predicate<String> {
+    private static class EqualToInAnyCase implements ExplicitPredicate<String> {
         private final String reference;
 
         @Override
@@ -227,7 +310,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class ElementOf<T> implements Predicate<T> {
+    private static class ElementOf<T> implements ExplicitPredicate<T> {
         private final Collection<? super T> pool;
 
         @Override
@@ -237,7 +320,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class KeyOf<T> implements Predicate<T> {
+    private static class KeyOf<T> implements ExplicitPredicate<T> {
         private final Map<? super T, ?> pool;
 
         @Override
@@ -247,7 +330,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class ValueOf<T> implements Predicate<T> {
+    private static class ValueOf<T> implements ExplicitPredicate<T> {
         private final Map<?, ? super T> pool;
 
         @Override
@@ -257,7 +340,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class GreaterThan<T> implements Predicate<T> {
+    private static class GreaterThan<T> implements ExplicitPredicate<T> {
         private final T reference;
         private final Comparator<T> comparator;
 
@@ -268,7 +351,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class GreaterThanOrEqualTo<T> implements Predicate<T> {
+    private static class GreaterThanOrEqualTo<T> implements ExplicitPredicate<T> {
         private final T reference;
         private final Comparator<T> comparator;
 
@@ -279,7 +362,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class LessThan<T> implements Predicate<T> {
+    private static class LessThan<T> implements ExplicitPredicate<T> {
         private final T reference;
         private final Comparator<T> comparator;
 
@@ -290,7 +373,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class LessThanOrEqualTo<T> implements Predicate<T> {
+    private static class LessThanOrEqualTo<T> implements ExplicitPredicate<T> {
         private final T reference;
         private final Comparator<T> comparator;
 
@@ -301,7 +384,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class Within<T> implements Predicate<T> {
+    private static class Within<T> implements ExplicitPredicate<T> {
         private final Predicate<T> lower;
         private final Predicate<T> upper;
 
@@ -312,7 +395,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class Mapping<T, S> implements Predicate<T> {
+    private static class Mapping<T, S> implements ExplicitPredicate<T> {
         private final Function<T, S> mapper;
         private final Predicate<S> predicate;
 
@@ -323,7 +406,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class AllMatch<I, C extends Collection<I>> implements Predicate<C> {
+    private static class AllMatch<I, C extends Collection<I>> implements ExplicitPredicate<C> {
         private final Predicate<I> predicate;
 
         @Override
@@ -333,7 +416,7 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class AnyMatch<I, C extends Collection<I>> implements Predicate<C> {
+    private static class AnyMatch<I, C extends Collection<I>> implements ExplicitPredicate<C> {
         private final Predicate<I> predicate;
 
         @Override
@@ -343,12 +426,78 @@ public class Predicates {
     }
 
     @RequiredArgsConstructor
-    private static class NoneMatch<I, C extends Collection<I>> implements Predicate<C> {
+    private static class NoneMatch<I, C extends Collection<I>> implements ExplicitPredicate<C> {
         private final Predicate<I> predicate;
 
         @Override
         public boolean test(C subject) {
             return subject.stream().noneMatch(predicate);
+        }
+    }
+
+    public static class Operations {
+        private Operations() {}
+
+        @SuppressWarnings("unchecked")
+        public static <T> BinaryOperator<Predicate<? super T>> conjunction() {
+            return (BinaryOperator<Predicate<? super T>>) ConjunctionOperator.INSTANCE;
+        }
+
+        public static <T> BinaryOperator<Predicate<? super T>> and() {
+            return conjunction();
+        }
+
+        public static <T> BinaryOperator<Predicate<? super T>> all() {
+            return conjunction();
+        }
+
+        @SuppressWarnings("unchecked")
+        public static <T> BinaryOperator<Predicate<? super T>> disjunction() {
+            return (BinaryOperator<Predicate<? super T>>) DisjunctionOperator.INSTANCE;
+        }
+
+        public static <T> BinaryOperator<Predicate<? super T>> or() {
+            return disjunction();
+        }
+
+        public static <T> BinaryOperator<Predicate<? super T>> any() {
+            return disjunction();
+        }
+
+        @SuppressWarnings("unchecked")
+        public static <T> UnaryOperator<Predicate<T>> inverse() {
+            return (UnaryOperator<Predicate<T>>) InversionOperator.INSTANCE;
+        }
+
+        public static <T> UnaryOperator<Predicate<T>> not() {
+            return inverse();
+        }
+
+        private static class ConjunctionOperator<T> implements BinaryOperator<Predicate<? super T>> {
+            public static final ConjunctionOperator INSTANCE = new ConjunctionOperator<>();
+
+            @Override
+            public Predicate<? super T> apply(Predicate<? super T> left, Predicate<? super T> right) {
+                return new Conjunction<>(left, right);
+            }
+        }
+
+        private static class DisjunctionOperator<T> implements BinaryOperator<Predicate<? super T>> {
+            public static final DisjunctionOperator INSTANCE = new DisjunctionOperator<>();
+
+            @Override
+            public Predicate<? super T> apply(Predicate<? super T> left, Predicate<? super T> right) {
+                return new Disjunction<>(left, right);
+            }
+        }
+
+        private static class InversionOperator<T> implements UnaryOperator<Predicate<T>> {
+            public static final InversionOperator INSTANCE = new InversionOperator<>();
+
+            @Override
+            public Predicate<T> apply(Predicate<T> predicate) {
+                return new Inversion<>(predicate);
+            }
         }
     }
 }
